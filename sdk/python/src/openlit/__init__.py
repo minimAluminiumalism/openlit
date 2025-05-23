@@ -226,6 +226,7 @@ def init(
     disable_metrics=False,
     pricing_json=None,
     collect_gpu_stats=False,
+    resource_attributes=None,
 ):
     """
     Initializes the openLIT configuration and setups tracing.
@@ -247,6 +248,7 @@ def init(
         disable_metrics (bool): Flag to disable metrics (Optional).
         pricing_json(str): File path or url to the pricing json (Optional).
         collect_gpu_stats (bool): Flag to enable or disable GPU metrics collection.
+        resource_attributes (Dict[str, str]): Custom OpenTelemetry resource attributes (Optional).
     """
     disabled_instrumentors = disabled_instrumentors if disabled_instrumentors else []
     logger.info("Starting openLIT initialization...")
@@ -317,6 +319,7 @@ def init(
             otlp_endpoint=otlp_endpoint,
             otlp_headers=otlp_headers,
             disable_batch=disable_batch,
+            resource_attributes=resource_attributes,
         )
 
         if not tracer:

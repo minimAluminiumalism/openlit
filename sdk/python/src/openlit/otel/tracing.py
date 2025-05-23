@@ -18,10 +18,19 @@ else:
 # Global flag to check if the tracer provider initialization is complete.
 TRACER_SET = False
 
-def setup_tracing(application_name, environment, tracer, otlp_endpoint, otlp_headers, disable_batch):
+def setup_tracing(application_name, environment, tracer, otlp_endpoint, otlp_headers, disable_batch, resource_attributes=None):
     """
     Sets up tracing with OpenTelemetry.
     Initializes the tracer provider and configures the span processor and exporter.
+    
+    Args:
+        application_name (str): Service name.
+        environment (str): Deployment environment.
+        tracer: External tracer instance (optional).
+        otlp_endpoint (str): OTLP endpoint.
+        otlp_headers: OTLP headers.
+        disable_batch (bool): Flag to disable batch processing.
+        resource_attributes (dict): Custom resource attributes (optional).
     """
 
     # If an external tracer is provided, return it immediately.
@@ -37,12 +46,24 @@ def setup_tracing(application_name, environment, tracer, otlp_endpoint, otlp_hea
         os.environ["HAYSTACK_AUTO_TRACE_ENABLED"] = "false"
 
         if not TRACER_SET:
-            # Create a resource with the service name attribute.
-            resource = Resource.create(attributes={
+            # Create base resource attributes
+            base_attributes = {
                 SERVICE_NAME: application_name,
                 DEPLOYMENT_ENVIRONMENT: environment,
-                TELEMETRY_SDK_NAME: "openlit"}
-            )
+                TELEMETRY_SDK_NAME: "openlit"
+            }
+            
+            # Merge with custom resource attributes if provided
+            if resource_attributes and isinstance(resource_attributes, dict):
+                # Custom attributes can override base attributes except TELEMETRY_SDK_NAME
+                merged_attributes = {**base_attributes, **resource_attributes}
+                # Ensure TELEMETRY_SDK_NAME always remains "openlit"
+                merged_attributes[TELEMETRY_SDK_NAME] = "openlit"
+            else:
+                merged_attributes = base_attributes
+
+            # Create a resource with the merged attributes
+            resource = Resource.create(attributes=merged_attributes)
 
             # Initialize the TracerProvider with the created resource.
             trace.set_tracer_provider(TracerProvider(resource=resource))
